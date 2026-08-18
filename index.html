@@ -1,1 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Presensi Siswa</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    header {
+      background: #1976d2;
+      color: white;
+      text-align: center;
+      padding: 25px 15px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.10);
+      margin-bottom: 20px;
+    }
+
+    video {
+      width: 100%;
+      max-width: 720px;
+      display: block;
+      margin: 20px auto;
+      border-radius: 12px;
+      background: #111;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #1976d2;
+      color: white;
+    }
+
+    button:hover {
+      background: #125ca1;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Presensi Siswa</h1>
+    <p>Sistem Presensi Deteksi Wajah</p>
+  </header>
+
+  <main>
+
+    <div class="card">
+
+      <h2>Kamera</h2>
+
+      <video id="video" autoplay playsinline></video>
+
+      <button onclick="aktifkanKamera()">
+        Aktifkan Kamera
+      </button>
+
+      <p id="status">
+        Kamera belum diaktifkan.
+      </p>
+
+    </div>
+
+  </main>
+
+  <script>
+
+    let stream = null;
+
+    async function aktifkanKamera() {
+
+      const video = document.getElementById("video");
+      const status = document.getElementById("status");
+
+      try {
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+
+        video.srcObject = stream;
+
+        status.textContent =
+          "Kamera berhasil diaktifkan.";
+
+        status.style.color = "green";
+
+      } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+          "Kamera tidak dapat diakses: " + error.message;
+
+        status.style.color = "red";
+      }
+    }
+
+  </script>
+
+</body>
+</html>
