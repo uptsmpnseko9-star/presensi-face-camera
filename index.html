@@ -128,13 +128,7 @@
 <script>
 
 const MODEL_URL =
-  const MODEL_URL =
-  const MODEL_URL =
   "https://cdn.jsdelivr.net/gh/vladmandic/face-api@1.7.12/model/";
-
-let stream = null;
-let deteksiAktif = false;
-let modelSiap = false;
 
 let stream = null;
 let deteksiAktif = false;
@@ -142,7 +136,7 @@ let modelSiap = false;
 
 
 // ==========================================
-// MEMUAT MODEL FACE DETECTION
+// MEMUAT MODEL
 // ==========================================
 
 async function muatModel() {
@@ -167,7 +161,7 @@ async function muatModel() {
 
     status.style.color = "green";
 
-    console.log("Model TinyFaceDetector berhasil dimuat.");
+    console.log("Model berhasil dimuat.");
 
   } catch (error) {
 
@@ -180,7 +174,6 @@ async function muatModel() {
       "Model deteksi wajah gagal dimuat.";
 
     status.style.color = "red";
-
   }
 }
 
@@ -209,14 +202,12 @@ async function aktifkanKamera() {
       return;
     }
 
-
     status.textContent =
       "Mengaktifkan kamera...";
 
     status.style.color = "orange";
 
 
-    // Jika kamera sebelumnya masih aktif
     if (stream) {
 
       stream.getTracks().forEach(
@@ -246,7 +237,6 @@ async function aktifkanKamera() {
 
     video.srcObject = stream;
 
-
     await video.play();
 
 
@@ -255,12 +245,9 @@ async function aktifkanKamera() {
 
     status.style.color = "green";
 
-
     deteksiAktif = true;
 
-
     mulaiDeteksiWajah();
-
 
   } catch (error) {
 
@@ -270,13 +257,11 @@ async function aktifkanKamera() {
     );
 
     status.textContent =
-      "Kamera/deteksi wajah gagal: " +
+      "Kamera gagal: " +
       error.message;
 
     status.style.color = "red";
-
   }
-
 }
 
 
@@ -304,17 +289,14 @@ async function mulaiDeteksiWajah() {
     );
 
     return;
-
   }
 
 
   const displaySize = {
 
-    width:
-      video.videoWidth,
+    width: video.videoWidth,
 
-    height:
-      video.videoHeight
+    height: video.videoHeight
 
   };
 
@@ -372,28 +354,18 @@ async function mulaiDeteksiWajah() {
 
 
       ctx.clearRect(
-
         0,
         0,
         canvas.width,
         canvas.height
-
       );
 
 
-      // Gambar kotak pada wajah
       faceapi.draw.drawDetections(
-
         canvas,
-
         resizedDetections
-
       );
 
-
-      // ==================================
-      // STATUS
-      // ==================================
 
       if (hasil.length === 0) {
 
@@ -403,7 +375,6 @@ async function mulaiDeteksiWajah() {
         status.style.color =
           "orange";
 
-
       } else if (hasil.length === 1) {
 
         status.textContent =
@@ -411,7 +382,6 @@ async function mulaiDeteksiWajah() {
 
         status.style.color =
           "green";
-
 
       } else {
 
@@ -422,9 +392,7 @@ async function mulaiDeteksiWajah() {
 
         status.style.color =
           "red";
-
       }
-
 
     } catch (error) {
 
@@ -445,65 +413,6 @@ async function mulaiDeteksiWajah() {
 
 
   proses();
-
-}
-
-
-// ==========================================
-// HENTIKAN KAMERA
-// ==========================================
-
-function hentikanKamera() {
-
-  deteksiAktif = false;
-
-
-  if (stream) {
-
-    stream.getTracks().forEach(
-      track => track.stop()
-    );
-
-    stream = null;
-
-  }
-
-
-  const video =
-    document.getElementById("video");
-
-
-  video.srcObject = null;
-
-
-  const canvas =
-    document.getElementById("canvas");
-
-
-  const ctx =
-    canvas.getContext("2d");
-
-
-  ctx.clearRect(
-
-    0,
-    0,
-    canvas.width,
-    canvas.height
-
-  );
-
-
-  const status =
-    document.getElementById("status");
-
-
-  status.textContent =
-    "Kamera dihentikan.";
-
-  status.style.color =
-    "red";
-
 }
 
 
