@@ -98,41 +98,99 @@
 
   </main>
 
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
-    let stream = null;
+<script>
 
-    async function aktifkanKamera() {
+let stream = null;
+let deteksiAktif = false;
 
-      const video = document.getElementById("video");
-      const status = document.getElementById("status");
+async function aktifkanKamera() {
 
-      try {
+  const video = document.getElementById("video");
+  const status = document.getElementById("status");
 
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false
-        });
+  try {
 
-        video.srcObject = stream;
+    status.textContent = "Memuat sistem deteksi wajah...";
+    status.style.color = "orange";
+
+    // Aktifkan kamera
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: false
+    });
+
+    video.srcObject = stream;
+
+    // Tunggu video siap
+    await new Promise((resolve) => {
+      video.onloadedmetadata = resolve;
+    });
+
+    // Muat model deteksi wajah
+    await faceapi.nets.tinyFaceDetector.loadFromUri(
+      "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model"
+    );
+
+    status.textContent = "Kamera aktif. Mendeteksi wajah...";
+    status.style.color = "green";
+
+    deteksiAktif = true;
+
+    mulaiDeteksiWajah();
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Kamera/deteksi wajah gagal: " + error.message;
+
+    status.style.color = "red";
+  }
+}
+
+
+async function mulaiDeteksiWajah() {
+
+  const video = document.getElementById("video");
+  const status = document.getElementById("status");
+
+  while (deteksiAktif) {
+
+    if (video.readyState >= 2) {
+
+      const hasil = await faceapi.detectAllFaces(
+        video,
+        new faceapi.TinyFaceDetectorOptions({
+          inputSize: 320,
+          scoreThreshold: 0.5
+        })
+      );
+
+      if (hasil.length > 0) {
 
         status.textContent =
-          "Kamera berhasil diaktifkan.";
+          "Wajah terdeteksi.";
 
         status.style.color = "green";
 
-      } catch (error) {
-
-        console.error(error);
+      } else {
 
         status.textContent =
-          "Kamera tidak dapat diakses: " + error.message;
+          "Kamera aktif. Wajah belum terdeteksi.";
 
-        status.style.color = "red";
+        status.style.color = "orange";
       }
     }
 
-  </script>
+    // Jangan mendeteksi terlalu cepat
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+}
+
+</script>
 
 </body>
 </html>
