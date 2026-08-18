@@ -127,12 +127,12 @@
 
 <script>
 
-const MODEL_URL =
-  "https://cdn.jsdelivr.net/gh/vladmandic/face-api@1.7.12/model/";
-
 let stream = null;
 let deteksiAktif = false;
 let modelSiap = false;
+
+const MODEL_URL =
+  "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
 
 
 // ==========================================
@@ -157,7 +157,7 @@ async function muatModel() {
     modelSiap = true;
 
     status.textContent =
-      "Model deteksi wajah siap.";
+      "Model siap. Silakan aktifkan kamera.";
 
     status.style.color = "green";
 
@@ -165,15 +165,13 @@ async function muatModel() {
 
   } catch (error) {
 
-    console.error(
-      "Gagal memuat model:",
-      error
-    );
+    console.error("Gagal memuat model:", error);
 
     status.textContent =
       "Model deteksi wajah gagal dimuat.";
 
     status.style.color = "red";
+
   }
 }
 
@@ -257,11 +255,12 @@ async function aktifkanKamera() {
     );
 
     status.textContent =
-      "Kamera gagal: " +
-      error.message;
+      "Kamera gagal: " + error.message;
 
     status.style.color = "red";
+
   }
+
 }
 
 
@@ -289,6 +288,7 @@ async function mulaiDeteksiWajah() {
     );
 
     return;
+
   }
 
 
@@ -354,18 +354,27 @@ async function mulaiDeteksiWajah() {
 
 
       ctx.clearRect(
+
         0,
         0,
         canvas.width,
         canvas.height
+
       );
 
+
+      // Gambar kotak wajah
 
       faceapi.draw.drawDetections(
+
         canvas,
+
         resizedDetections
+
       );
 
+
+      // Status
 
       if (hasil.length === 0) {
 
@@ -375,7 +384,9 @@ async function mulaiDeteksiWajah() {
         status.style.color =
           "orange";
 
-      } else if (hasil.length === 1) {
+      }
+
+      else if (hasil.length === 1) {
 
         status.textContent =
           "✓ Wajah terdeteksi.";
@@ -383,15 +394,18 @@ async function mulaiDeteksiWajah() {
         status.style.color =
           "green";
 
-      } else {
+      }
+
+      else {
 
         status.textContent =
           "⚠ Terdeteksi " +
           hasil.length +
-          " wajah. Harap hanya satu orang.";
+          " wajah.";
 
         status.style.color =
           "red";
+
       }
 
     } catch (error) {
@@ -413,6 +427,7 @@ async function mulaiDeteksiWajah() {
 
 
   proses();
+
 }
 
 
