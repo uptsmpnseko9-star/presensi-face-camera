@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Presensi Siswa</title>
 
   <style>
-
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -42,6 +37,7 @@
       border-radius: 12px;
       padding: 25px;
       box-shadow: 0 3px 12px rgba(0,0,0,0.10);
+      margin-bottom: 20px;
     }
 
     .camera-container {
@@ -85,22 +81,15 @@
       margin-top: 15px;
       font-weight: bold;
     }
-
   </style>
-
 </head>
-
 
 <body>
 
   <header>
-
     <h1>Presensi Siswa</h1>
-
     <p>Sistem Presensi Deteksi Wajah</p>
-
   </header>
-
 
   <main>
 
@@ -108,24 +97,14 @@
 
       <h2>Kamera</h2>
 
-
       <div class="camera-container">
-
-        <video
-          id="video"
-          autoplay
-          playsinline>
-        </video>
-
+        <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
-
       </div>
 
-
-      <button onclick="aktifkanKamera()">
+      <button id="btnKamera">
         Aktifkan Kamera
       </button>
-
 
       <p id="status">
         Memuat sistem...
@@ -137,106 +116,144 @@
 
 
   <!-- FACE API -->
-
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
-<script>
-const MODEL_URL = "./models";
 
-let stream = null;
-let deteksiAktif = false;
-let modelSiap = false;
+  <script>
 
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const status = document.getElementById("status");
+    const MODEL_URL = "./models";
+
+    let stream = null;
+    let deteksiAktif = false;
+    let modelSiap = false;
 
 
-// ========================================
-// LOAD MODEL
-// ========================================
+    const video =
+      document.getElementById("video");
 
-async function muatModel() {
+    const canvas =
+      document.getElementById("canvas");
 
-    status.textContent = "Memuat model deteksi wajah...";
-    status.style.color = "orange";
+    const status =
+      document.getElementById("status");
 
-    try {
+    const btnKamera =
+      document.getElementById("btnKamera");
 
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+
+    // =====================================
+    // MEMUAT MODEL
+    // =====================================
+
+    async function muatModel() {
+
+      status.textContent =
+        "Memuat model deteksi wajah...";
+
+      status.style.color = "orange";
+
+
+      try {
+
+        await faceapi.nets.tinyFaceDetector.loadFromUri(
+          MODEL_URL
+        );
+
 
         modelSiap = true;
 
-        status.textContent = "Model deteksi wajah siap.";
+
+        status.textContent =
+          "Model deteksi wajah siap.";
+
         status.style.color = "green";
 
-        console.log("MODEL BERHASIL DIMUAT");
 
-    } catch (error) {
+        console.log(
+          "MODEL BERHASIL DIMUAT"
+        );
 
-        console.error("Gagal memuat model:", error);
+
+      } catch (error) {
+
+        console.error(
+          "GAGAL MEMUAT MODEL:",
+          error
+        );
+
 
         modelSiap = false;
 
+
         status.textContent =
-            "Model deteksi wajah gagal dimuat.";
+          "Model deteksi wajah gagal dimuat.";
 
         status.style.color = "red";
+      }
     }
-}
 
 
-// ========================================
-// AKTIFKAN KAMERA
-// ========================================
+    // =====================================
+    // AKTIFKAN KAMERA
+    // =====================================
 
-async function aktifkanKamera() {
+    async function aktifkanKamera() {
 
-    if (!modelSiap) {
+      console.log(
+        "Fungsi aktifkanKamera dijalankan"
+      );
+
+
+      if (!modelSiap) {
 
         status.textContent =
-            "Model deteksi wajah belum siap.";
+          "Model deteksi wajah belum siap.";
 
         status.style.color = "red";
 
         return;
-    }
+      }
 
-    try {
+
+      try {
 
         status.textContent =
-            "Mengaktifkan kamera...";
+          "Mengaktifkan kamera...";
 
         status.style.color = "orange";
 
 
-        // Hentikan kamera lama jika ada
+        // Hentikan kamera lama
         if (stream) {
 
-            stream.getTracks().forEach(
-                track => track.stop()
-            );
+          stream.getTracks().forEach(
+            function(track) {
+              track.stop();
+            }
+          );
         }
 
 
         stream =
-            await navigator.mediaDevices.getUserMedia({
+          await navigator.mediaDevices.getUserMedia({
 
-                video: {
-                    facingMode: "user",
-                    width: {
-                        ideal: 1280
-                    },
-                    height: {
-                        ideal: 720
-                    }
-                },
+            video: {
+              facingMode: "user",
+              width: {
+                ideal: 1280
+              },
+              height: {
+                ideal: 720
+              }
+            },
 
-                audio: false
-            });
+            audio: false
+
+          });
 
 
         video.srcObject = stream;
+
 
         await video.play();
 
@@ -245,226 +262,208 @@ async function aktifkanKamera() {
 
 
         status.textContent =
-            "Kamera aktif. Mendeteksi wajah...";
+          "Kamera aktif. Mendeteksi wajah...";
 
         status.style.color = "green";
 
 
         mulaiDeteksiWajah();
 
-    } catch (error) {
+
+      } catch (error) {
 
         console.error(
-            "Kesalahan kamera:",
-            error
+          "KESALAHAN KAMERA:",
+          error
         );
+
 
         status.textContent =
-            "Kamera gagal diaktifkan: " +
-            error.message;
+          "Kamera gagal diaktifkan: " +
+          error.message;
 
         status.style.color = "red";
+      }
     }
-}
 
 
-// ========================================
-// DETEKSI WAJAH
-// ========================================
+    // =====================================
+    // DETEKSI WAJAH
+    // =====================================
 
-async function mulaiDeteksiWajah() {
+    async function mulaiDeteksiWajah() {
 
-    if (!deteksiAktif) {
+      if (!deteksiAktif) {
         return;
-    }
+      }
 
 
-    // Tunggu video benar-benar siap
-    if (
+      if (
         video.videoWidth === 0 ||
         video.videoHeight === 0
-    ) {
+      ) {
 
         setTimeout(
-            mulaiDeteksiWajah,
-            500
+          mulaiDeteksiWajah,
+          500
         );
 
         return;
-    }
+      }
 
 
-    const displaySize = {
+      const displaySize = {
 
-        width: video.videoWidth,
+        width:
+          video.videoWidth,
 
-        height: video.videoHeight
-    };
+        height:
+          video.videoHeight
+
+      };
 
 
-    canvas.width =
+      canvas.width =
         displaySize.width;
 
-    canvas.height =
+      canvas.height =
         displaySize.height;
 
 
-    faceapi.matchDimensions(
+      faceapi.matchDimensions(
         canvas,
         displaySize
-    );
+      );
 
 
-    async function proses() {
+      async function proses() {
 
         if (!deteksiAktif) {
-            return;
+          return;
         }
 
 
         try {
 
-            const hasil =
-                await faceapi.detectAllFaces(
-                    video,
-                    new faceapi.TinyFaceDetectorOptions({
-                        inputSize: 320,
-                        scoreThreshold: 0.5
-                    })
-                );
+          const hasil =
+            await faceapi.detectAllFaces(
 
+              video,
 
-            const resizedDetections =
-                faceapi.resizeResults(
-                    hasil,
-                    displaySize
-                );
+              new faceapi.TinyFaceDetectorOptions({
 
+                inputSize: 320,
 
-            const ctx =
-                canvas.getContext("2d");
+                scoreThreshold: 0.5
 
+              })
 
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
             );
 
 
-            // Gambar kotak wajah
-            faceapi.draw.drawDetections(
-                canvas,
-                resizedDetections
+          const resizedDetections =
+            faceapi.resizeResults(
+
+              hasil,
+
+              displaySize
+
             );
 
 
-            // Status
-            if (hasil.length === 0) {
+          const ctx =
+            canvas.getContext("2d");
 
-                status.textContent =
-                    "Kamera aktif. Wajah belum terdeteksi.";
 
-                status.style.color =
-                    "orange";
+          ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
 
-            } else if (hasil.length === 1) {
 
-                status.textContent =
-                    "✓ Wajah terdeteksi.";
+          faceapi.draw.drawDetections(
+            canvas,
+            resizedDetections
+          );
 
-                status.style.color =
-                    "green";
 
-            } else {
+          if (hasil.length === 0) {
 
-                status.textContent =
-                    "⚠ Terdeteksi " +
-                    hasil.length +
-                    " wajah. Harap hanya satu orang.";
+            status.textContent =
+              "Kamera aktif. Wajah belum terdeteksi.";
 
-                status.style.color =
-                    "red";
-            }
+            status.style.color =
+              "orange";
+
+
+          } else if (hasil.length === 1) {
+
+            status.textContent =
+              "✓ Wajah terdeteksi.";
+
+            status.style.color =
+              "green";
+
+
+          } else {
+
+            status.textContent =
+              "⚠ Terdeteksi " +
+              hasil.length +
+              " wajah. Harap hanya satu orang.";
+
+            status.style.color =
+              "red";
+          }
 
 
         } catch (error) {
 
-            console.error(
-                "Kesalahan deteksi:",
-                error
-            );
+          console.error(
+            "KESALAHAN DETEKSI:",
+            error
+          );
+
         }
 
 
         setTimeout(
-            proses,
-            300
+          proses,
+          300
         );
+      }
+
+
+      proses();
     }
 
 
-    proses();
-}
+    // =====================================
+    // TOMBOL KAMERA
+    // =====================================
 
-
-// ========================================
-// HENTIKAN KAMERA
-// ========================================
-
-function hentikanKamera() {
-
-    deteksiAktif = false;
-
-
-    if (stream) {
-
-        stream.getTracks().forEach(
-            track => track.stop()
-        );
-
-        stream = null;
-    }
-
-
-    video.srcObject = null;
-
-
-    const ctx =
-        canvas.getContext("2d");
-
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
+    btnKamera.addEventListener(
+      "click",
+      aktifkanKamera
     );
 
 
-    status.textContent =
-        "Kamera dihentikan.";
+    // =====================================
+    // MULAI APLIKASI
+    // =====================================
 
-    status.style.color =
-        "red";
-}
-
-
-// ========================================
-// MULAI
-// ========================================
-
-window.addEventListener(
-    "DOMContentLoaded",
-    function () {
+    window.addEventListener(
+      "DOMContentLoaded",
+      function() {
 
         muatModel();
 
-    }
-);
-</script>
+      }
+    );
+
+  </script>
 
 </body>
-
 </html>
