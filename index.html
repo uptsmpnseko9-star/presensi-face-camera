@@ -128,7 +128,12 @@
 <script>
 
 const MODEL_URL =
-  "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+  const MODEL_URL =
+  "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/";
+
+let stream = null;
+let deteksiAktif = false;
+let modelSiap = false;
 
 let stream = null;
 let deteksiAktif = false;
