@@ -382,9 +382,14 @@
 
 
           faceapi.draw.drawDetections(
-            canvas,
-            resizedDetections
-          );
+  canvas,
+  resizedDetections
+);
+
+faceapi.draw.drawFaceLandmarks(
+  canvas,
+  resizedDetections
+);
 
 
           if (hasil.length === 0) {
