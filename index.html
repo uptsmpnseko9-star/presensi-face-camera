@@ -148,31 +148,42 @@
     async function muatModel() {
 
       status.textContent =
-        "Memuat model deteksi wajah...";
+        "Memuat model wajah...";
 
       status.style.color = "orange";
 
 
       try {
 
+        // Model deteksi wajah
         await faceapi.nets.tinyFaceDetector.loadFromUri(
-        MODEL_URL
+          MODEL_URL
         );
 
-      await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
-      MODEL_URL
-      );
 
-      modelSiap = true;
+        // Model 68 titik landmark wajah
+        await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
+          MODEL_URL
+        );
+
+
+        // Model pengenalan wajah
+        await faceapi.nets.faceRecognitionNet.loadFromUri(
+          MODEL_URL
+        );
+
+
+        modelSiap = true;
+
 
         status.textContent =
-          "Model deteksi wajah siap.";
+          "Model pengenalan wajah siap.";
 
         status.style.color = "green";
 
 
         console.log(
-          "MODEL BERHASIL DIMUAT"
+          "SEMUA MODEL BERHASIL DIMUAT"
         );
 
 
@@ -188,7 +199,7 @@
 
 
         status.textContent =
-          "Model deteksi wajah gagal dimuat.";
+          "Model gagal dimuat.";
 
         status.style.color = "red";
       }
@@ -209,7 +220,7 @@
       if (!modelSiap) {
 
         status.textContent =
-          "Model deteksi wajah belum siap.";
+          "Model pengenalan wajah belum siap.";
 
         status.style.color = "red";
 
@@ -348,27 +359,28 @@
         try {
 
           const hasil =
-  await faceapi
-    .detectAllFaces(
-      video,
-      new faceapi.TinyFaceDetectorOptions({
-        inputSize: 320,
-        scoreThreshold: 0.5
-      })
-    )
-    .withFaceLandmarks(true);
+            await faceapi
+              .detectAllFaces(
+                video,
+                new faceapi.TinyFaceDetectorOptions({
+                  inputSize: 320,
+                  scoreThreshold: 0.5
+                })
+              )
+              .withFaceLandmarks(true);
 
 
           const resizedDetections =
             faceapi.resizeResults(
-
               hasil,
-
               displaySize
-
             );
 
-          console.log("LANDMARK:", resizedDetections);
+
+          console.log(
+            "LANDMARK:",
+            resizedDetections
+          );
 
 
           const ctx =
@@ -384,14 +396,15 @@
 
 
           faceapi.draw.drawDetections(
-  canvas,
-  resizedDetections
-);
+            canvas,
+            resizedDetections
+          );
 
-faceapi.draw.drawFaceLandmarks(
-  canvas,
-  resizedDetections
-);
+
+          faceapi.draw.drawFaceLandmarks(
+            canvas,
+            resizedDetections
+          );
 
 
           if (hasil.length === 0) {
