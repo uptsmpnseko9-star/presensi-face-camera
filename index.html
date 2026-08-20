@@ -348,19 +348,15 @@
         try {
 
           const hasil =
-            await faceapi.detectAllFaces(
-
-              video,
-
-              new faceapi.TinyFaceDetectorOptions({
-
-                inputSize: 320,
-
-                scoreThreshold: 0.5
-
-              })
-
-            );
+  await faceapi
+    .detectAllFaces(
+      video,
+      new faceapi.TinyFaceDetectorOptions({
+        inputSize: 320,
+        scoreThreshold: 0.5
+      })
+    )
+    .withFaceLandmarks(true);
 
 
           const resizedDetections =
