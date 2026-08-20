@@ -156,12 +156,14 @@
       try {
 
         await faceapi.nets.tinyFaceDetector.loadFromUri(
-          MODEL_URL
+        MODEL_URL
         );
 
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
+      MODEL_URL
+      );
 
-        modelSiap = true;
-
+      modelSiap = true;
 
         status.textContent =
           "Model deteksi wajah siap.";
