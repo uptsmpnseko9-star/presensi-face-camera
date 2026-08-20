@@ -112,6 +112,34 @@
       margin-top: 10px;
       padding-left: 20px;
     }
+
+    #statusPresensi {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .tabel-presensi {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 15px;
+    }
+
+    .tabel-presensi th,
+    .tabel-presensi td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .tabel-presensi th {
+      background: #e2e8f0;
+    }
+
+    .kosong-presensi {
+      color: #64748b;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -179,6 +207,39 @@
         <li>Belum ada data wajah.</li>
       </ul>
 
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>Presensi Siswa</h2>
+
+      <p>
+        Pastikan wajah siswa sudah dikenali, lalu klik
+        <b>Presensi Sekarang</b>.
+      </p>
+
+      <button id="btnPresensi" disabled>
+        Presensi Sekarang
+      </button>
+
+      <p id="statusPresensi">
+        Belum ada siswa yang dikenali.
+      </p>
+
+      <h3>Riwayat Presensi</h3>
+
+      <div id="tabelPresensiContainer">
+        <p class="kosong-presensi">
+          Belum ada data presensi.
+        </p>
+      </div>
+
+      <button id="btnHapusPresensi">
+        Hapus Riwayat Presensi
+      </button>
+
     </div>
 
   </main>
@@ -193,11 +254,13 @@
     const MODEL_URL = "./models";
 
     const STORAGE_KEY = "dataWajahSiswa";
+    const PRESENSI_KEY = "dataPresensiSiswa";
 
     let stream = null;
     let deteksiAktif = false;
     let modelSiap = false;
     let faceMatcher = null;
+    let siswaTerdeteksi = null;
 
 
     const video =
@@ -229,6 +292,18 @@
 
     const daftarSiswa =
       document.getElementById("daftarSiswa");
+
+    const btnPresensi =
+      document.getElementById("btnPresensi");
+
+    const statusPresensi =
+      document.getElementById("statusPresensi");
+
+    const tabelPresensiContainer =
+      document.getElementById("tabelPresensiContainer");
+
+    const btnHapusPresensi =
+      document.getElementById("btnHapusPresensi");
 
 
     // =====================================
@@ -554,8 +629,18 @@
             status.style.color =
               "orange";
 
+            siswaTerdeteksi = null;
+
+            btnPresensi.disabled = true;
+
             hasilPengenalan.textContent =
               "Pengenalan: belum ada wajah.";
+
+            statusPresensi.textContent =
+              "Belum ada siswa yang dikenali.";
+
+            statusPresensi.style.color =
+              "orange";
 
           } else if (hasil.length > 1) {
 
@@ -567,8 +652,18 @@
             status.style.color =
               "red";
 
+            siswaTerdeteksi = null;
+
+            btnPresensi.disabled = true;
+
             hasilPengenalan.textContent =
               "Pengenalan: hanya satu wajah yang diperbolehkan.";
+
+            statusPresensi.textContent =
+              "Presensi hanya dapat dilakukan untuk satu wajah.";
+
+            statusPresensi.style.color =
+              "red";
 
           } else {
 
@@ -590,23 +685,58 @@
                 hasilMatch.label !== "unknown"
               ) {
 
+                siswaTerdeteksi = {
+                  nama: hasilMatch.label,
+                  jarak: hasilMatch.distance
+                };
+
                 hasilPengenalan.textContent =
                   "Pengenalan: " +
                   hasilMatch.label +
                   " | Jarak: " +
                   hasilMatch.distance.toFixed(3);
 
+                btnPresensi.disabled = false;
+
+                statusPresensi.textContent =
+                  "Siswa dikenali: " +
+                  hasilMatch.label +
+                  ". Siap melakukan presensi.";
+
+                statusPresensi.style.color =
+                  "green";
+
               } else {
+
+                siswaTerdeteksi = null;
+
+                btnPresensi.disabled = true;
 
                 hasilPengenalan.textContent =
                   "Pengenalan: wajah belum terdaftar.";
+
+                statusPresensi.textContent =
+                  "Wajah belum terdaftar.";
+
+                statusPresensi.style.color =
+                  "red";
 
               }
 
             } else {
 
+              siswaTerdeteksi = null;
+
+              btnPresensi.disabled = true;
+
               hasilPengenalan.textContent =
                 "Pengenalan: belum ada siswa terdaftar.";
+
+              statusPresensi.textContent =
+                "Belum ada siswa terdaftar.";
+
+              statusPresensi.style.color =
+                "orange";
 
             }
           }
@@ -630,6 +760,259 @@
 
 
       proses();
+    }
+
+
+
+    // =====================================
+    // SISTEM PRESENSI
+    // =====================================
+
+    function ambilDataPresensi() {
+
+      try {
+
+        const data =
+          JSON.parse(
+            localStorage.getItem(PRESENSI_KEY) || "[]"
+          );
+
+        return Array.isArray(data) ? data : [];
+
+      } catch (error) {
+
+        console.error(
+          "GAGAL MEMUAT DATA PRESENSI:",
+          error
+        );
+
+        return [];
+      }
+    }
+
+
+    function tanggalHariIni() {
+
+      const sekarang = new Date();
+
+      const tahun =
+        sekarang.getFullYear();
+
+      const bulan =
+        String(
+          sekarang.getMonth() + 1
+        ).padStart(2, "0");
+
+      const tanggal =
+        String(
+          sekarang.getDate()
+        ).padStart(2, "0");
+
+      return tahun + "-" + bulan + "-" + tanggal;
+    }
+
+
+    function formatTanggal(tanggal) {
+
+      const bagian =
+        tanggal.split("-");
+
+      if (bagian.length !== 3) {
+        return tanggal;
+      }
+
+      return (
+        bagian[2] +
+        "/" +
+        bagian[1] +
+        "/" +
+        bagian[0]
+      );
+    }
+
+
+    function formatJam() {
+
+      const sekarang = new Date();
+
+      return (
+        String(
+          sekarang.getHours()
+        ).padStart(2, "0") +
+        ":" +
+        String(
+          sekarang.getMinutes()
+        ).padStart(2, "0") +
+        ":" +
+        String(
+          sekarang.getSeconds()
+        ).padStart(2, "0")
+      );
+    }
+
+
+    function tampilkanRiwayatPresensi() {
+
+      const data =
+        ambilDataPresensi();
+
+      if (data.length === 0) {
+
+        tabelPresensiContainer.innerHTML =
+          '<p class="kosong-presensi">Belum ada data presensi.</p>';
+
+        return;
+      }
+
+      let htmlTabel = `
+        <table class="tabel-presensi">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama</th>
+              <th>Tanggal</th>
+              <th>Jam</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      data.forEach(function(item, index) {
+
+        htmlTabel += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.nama}</td>
+            <td>${formatTanggal(item.tanggal)}</td>
+            <td>${item.jam}</td>
+            <td>${item.status}</td>
+          </tr>
+        `;
+
+      });
+
+      htmlTabel += `
+          </tbody>
+        </table>
+      `;
+
+      tabelPresensiContainer.innerHTML =
+        htmlTabel;
+    }
+
+
+    function sudahPresensiHariIni(nama) {
+
+      const data =
+        ambilDataPresensi();
+
+      const hariIni =
+        tanggalHariIni();
+
+      return data.some(function(item) {
+
+        return (
+          item.nama.toLowerCase() ===
+            nama.toLowerCase() &&
+          item.tanggal === hariIni
+        );
+
+      });
+    }
+
+
+    function lakukanPresensi() {
+
+      if (!siswaTerdeteksi) {
+
+        statusPresensi.textContent =
+          "Belum ada siswa yang dikenali.";
+
+        statusPresensi.style.color =
+          "red";
+
+        return;
+      }
+
+      const nama =
+        siswaTerdeteksi.nama;
+
+      if (sudahPresensiHariIni(nama)) {
+
+        statusPresensi.textContent =
+          "⚠ " +
+          nama +
+          " sudah melakukan presensi hari ini.";
+
+        statusPresensi.style.color =
+          "orange";
+
+        return;
+      }
+
+      const data =
+        ambilDataPresensi();
+
+      data.unshift({
+
+        nama: nama,
+
+        tanggal:
+          tanggalHariIni(),
+
+        jam:
+          formatJam(),
+
+        status:
+          "Hadir"
+
+      });
+
+      localStorage.setItem(
+        PRESENSI_KEY,
+        JSON.stringify(data)
+      );
+
+      statusPresensi.textContent =
+        "✓ Presensi " +
+        nama +
+        " berhasil dicatat.";
+
+      statusPresensi.style.color =
+        "green";
+
+      tampilkanRiwayatPresensi();
+
+      console.log(
+        "PRESENSI BERHASIL:",
+        nama
+      );
+    }
+
+
+    function hapusRiwayatPresensi() {
+
+      const yakin =
+        confirm(
+          "Hapus semua riwayat presensi dari browser ini?"
+        );
+
+      if (!yakin) {
+        return;
+      }
+
+      localStorage.removeItem(
+        PRESENSI_KEY
+      );
+
+      tampilkanRiwayatPresensi();
+
+      statusPresensi.textContent =
+        "Semua riwayat presensi telah dihapus.";
+
+      statusPresensi.style.color =
+        "green";
     }
 
 
@@ -842,6 +1225,18 @@
       "click",
       hapusSemuaData
     );
+
+    btnPresensi.addEventListener(
+      "click",
+      lakukanPresensi
+    );
+
+    btnHapusPresensi.addEventListener(
+      "click",
+      hapusRiwayatPresensi
+    );
+
+    tampilkanRiwayatPresensi();
 
 
     // =====================================
