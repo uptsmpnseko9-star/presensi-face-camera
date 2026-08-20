@@ -63,6 +63,16 @@
       pointer-events: none;
     }
 
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 8px 0 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
     button {
       border: none;
       border-radius: 8px;
@@ -71,15 +81,36 @@
       cursor: pointer;
       background: #1976d2;
       color: white;
+      margin-right: 8px;
+      margin-bottom: 8px;
     }
 
     button:hover {
       background: #125ca1;
     }
 
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
     #status {
       margin-top: 15px;
       font-weight: bold;
+    }
+
+    #hasilPengenalan {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #daftarSiswa {
+      margin-top: 10px;
+      padding-left: 20px;
     }
   </style>
 </head>
@@ -88,7 +119,7 @@
 
   <header>
     <h1>Presensi Siswa</h1>
-    <p>Sistem Presensi Deteksi Wajah</p>
+    <p>Sistem Presensi Deteksi dan Pengenalan Wajah</p>
   </header>
 
   <main>
@@ -110,6 +141,44 @@
         Memuat sistem...
       </p>
 
+      <div id="hasilPengenalan">
+        Pengenalan: belum aktif.
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>Daftarkan Wajah Siswa</h2>
+
+      <p>
+        Aktifkan kamera, masukkan nama siswa, lalu klik
+        <b>Daftarkan Wajah</b> saat hanya satu wajah terlihat.
+      </p>
+
+      <input
+        type="text"
+        id="namaSiswa"
+        placeholder="Masukkan nama siswa"
+        autocomplete="off"
+      >
+
+      <button id="btnDaftar">
+        Daftarkan Wajah
+      </button>
+
+      <button id="btnHapusData">
+        Hapus Semua Data Wajah
+      </button>
+
+      <p id="statusDaftar"></p>
+
+      <h3>Siswa Terdaftar</h3>
+      <ul id="daftarSiswa">
+        <li>Belum ada data wajah.</li>
+      </ul>
+
     </div>
 
   </main>
@@ -123,9 +192,12 @@
 
     const MODEL_URL = "./models";
 
+    const STORAGE_KEY = "dataWajahSiswa";
+
     let stream = null;
     let deteksiAktif = false;
     let modelSiap = false;
+    let faceMatcher = null;
 
 
     const video =
@@ -140,6 +212,24 @@
     const btnKamera =
       document.getElementById("btnKamera");
 
+    const btnDaftar =
+      document.getElementById("btnDaftar");
+
+    const btnHapusData =
+      document.getElementById("btnHapusData");
+
+    const namaSiswa =
+      document.getElementById("namaSiswa");
+
+    const statusDaftar =
+      document.getElementById("statusDaftar");
+
+    const hasilPengenalan =
+      document.getElementById("hasilPengenalan");
+
+    const daftarSiswa =
+      document.getElementById("daftarSiswa");
+
 
     // =====================================
     // MEMUAT MODEL
@@ -148,44 +238,36 @@
     async function muatModel() {
 
       status.textContent =
-        "Memuat model wajah...";
+        "Memuat model pengenalan wajah...";
 
       status.style.color = "orange";
 
-
       try {
 
-        // Model deteksi wajah
         await faceapi.nets.tinyFaceDetector.loadFromUri(
           MODEL_URL
         );
 
-
-        // Model 68 titik landmark wajah
         await faceapi.nets.faceLandmark68TinyNet.loadFromUri(
           MODEL_URL
         );
 
-
-        // Model pengenalan wajah
         await faceapi.nets.faceRecognitionNet.loadFromUri(
           MODEL_URL
         );
 
-
         modelSiap = true;
-
 
         status.textContent =
           "Model pengenalan wajah siap.";
 
         status.style.color = "green";
 
-
         console.log(
           "SEMUA MODEL BERHASIL DIMUAT"
         );
 
+        muatDataWajah();
 
       } catch (error) {
 
@@ -194,9 +276,7 @@
           error
         );
 
-
         modelSiap = false;
-
 
         status.textContent =
           "Model gagal dimuat.";
@@ -207,15 +287,97 @@
 
 
     // =====================================
+    // DATA WAJAH DARI LOCAL STORAGE
+    // =====================================
+
+    function muatDataWajah() {
+
+      try {
+
+        const data =
+          JSON.parse(
+            localStorage.getItem(STORAGE_KEY) || "[]"
+          );
+
+        if (!Array.isArray(data) || data.length === 0) {
+
+          faceMatcher = null;
+          tampilkanDaftarSiswa(data);
+          return;
+        }
+
+        const labeledDescriptors =
+          data.map(function(siswa) {
+
+            const descriptor =
+              new Float32Array(siswa.descriptor);
+
+            return new faceapi.LabeledFaceDescriptors(
+              siswa.nama,
+              [descriptor]
+            );
+          });
+
+        faceMatcher =
+          new faceapi.FaceMatcher(
+            labeledDescriptors,
+            0.60
+          );
+
+        tampilkanDaftarSiswa(data);
+
+        console.log(
+          "DATA WAJAH DIMUAT:",
+          data
+        );
+
+      } catch (error) {
+
+        console.error(
+          "GAGAL MEMUAT DATA WAJAH:",
+          error
+        );
+
+        faceMatcher = null;
+      }
+    }
+
+
+    function tampilkanDaftarSiswa(data) {
+
+      daftarSiswa.innerHTML = "";
+
+      if (!data || data.length === 0) {
+
+        const li =
+          document.createElement("li");
+
+        li.textContent =
+          "Belum ada data wajah.";
+
+        daftarSiswa.appendChild(li);
+
+        return;
+      }
+
+      data.forEach(function(siswa) {
+
+        const li =
+          document.createElement("li");
+
+        li.textContent =
+          siswa.nama;
+
+        daftarSiswa.appendChild(li);
+      });
+    }
+
+
+    // =====================================
     // AKTIFKAN KAMERA
     // =====================================
 
     async function aktifkanKamera() {
-
-      console.log(
-        "Fungsi aktifkanKamera dijalankan"
-      );
-
 
       if (!modelSiap) {
 
@@ -227,7 +389,6 @@
         return;
       }
 
-
       try {
 
         status.textContent =
@@ -235,8 +396,6 @@
 
         status.style.color = "orange";
 
-
-        // Hentikan kamera lama
         if (stream) {
 
           stream.getTracks().forEach(
@@ -245,7 +404,6 @@
             }
           );
         }
-
 
         stream =
           await navigator.mediaDevices.getUserMedia({
@@ -264,24 +422,18 @@
 
           });
 
-
         video.srcObject = stream;
-
 
         await video.play();
 
-
         deteksiAktif = true;
 
-
         status.textContent =
-          "Kamera aktif. Mendeteksi wajah...";
+          "Kamera aktif. Mendeteksi dan mengenali wajah...";
 
         status.style.color = "green";
 
-
         mulaiDeteksiWajah();
-
 
       } catch (error) {
 
@@ -289,7 +441,6 @@
           "KESALAHAN KAMERA:",
           error
         );
-
 
         status.textContent =
           "Kamera gagal diaktifkan: " +
@@ -301,7 +452,7 @@
 
 
     // =====================================
-    // DETEKSI WAJAH
+    // DETEKSI + PENGENALAN WAJAH
     // =====================================
 
     async function mulaiDeteksiWajah() {
@@ -309,7 +460,6 @@
       if (!deteksiAktif) {
         return;
       }
-
 
       if (
         video.videoWidth === 0 ||
@@ -324,7 +474,6 @@
         return;
       }
 
-
       const displaySize = {
 
         width:
@@ -335,13 +484,11 @@
 
       };
 
-
       canvas.width =
         displaySize.width;
 
       canvas.height =
         displaySize.height;
-
 
       faceapi.matchDimensions(
         canvas,
@@ -355,7 +502,6 @@
           return;
         }
 
-
         try {
 
           const hasil =
@@ -367,7 +513,8 @@
                   scoreThreshold: 0.5
                 })
               )
-              .withFaceLandmarks(true);
+              .withFaceLandmarks(true)
+              .withFaceDescriptors();
 
 
           const resizedDetections =
@@ -377,15 +524,8 @@
             );
 
 
-          console.log(
-            "LANDMARK:",
-            resizedDetections
-          );
-
-
           const ctx =
             canvas.getContext("2d");
-
 
           ctx.clearRect(
             0,
@@ -399,7 +539,6 @@
             canvas,
             resizedDetections
           );
-
 
           faceapi.draw.drawFaceLandmarks(
             canvas,
@@ -415,17 +554,10 @@
             status.style.color =
               "orange";
 
+            hasilPengenalan.textContent =
+              "Pengenalan: belum ada wajah.";
 
-          } else if (hasil.length === 1) {
-
-            status.textContent =
-              "✓ Wajah terdeteksi.";
-
-            status.style.color =
-              "green";
-
-
-          } else {
+          } else if (hasil.length > 1) {
 
             status.textContent =
               "⚠ Terdeteksi " +
@@ -434,18 +566,61 @@
 
             status.style.color =
               "red";
-          }
 
+            hasilPengenalan.textContent =
+              "Pengenalan: hanya satu wajah yang diperbolehkan.";
+
+          } else {
+
+            status.textContent =
+              "✓ Wajah terdeteksi.";
+
+            status.style.color =
+              "green";
+
+
+            if (faceMatcher) {
+
+              const hasilMatch =
+                faceMatcher.findBestMatch(
+                  hasil[0].descriptor
+                );
+
+              if (
+                hasilMatch.label !== "unknown"
+              ) {
+
+                hasilPengenalan.textContent =
+                  "Pengenalan: " +
+                  hasilMatch.label +
+                  " | Jarak: " +
+                  hasilMatch.distance.toFixed(3);
+
+              } else {
+
+                hasilPengenalan.textContent =
+                  "Pengenalan: wajah belum terdaftar.";
+
+              }
+
+            } else {
+
+              hasilPengenalan.textContent =
+                "Pengenalan: belum ada siswa terdaftar.";
+
+            }
+          }
 
         } catch (error) {
 
           console.error(
-            "KESALAHAN DETEKSI:",
+            "KESALAHAN DETEKSI/PENGENALAN:",
             error
           );
 
+          hasilPengenalan.textContent =
+            "Pengenalan: terjadi kesalahan. Lihat Console.";
         }
-
 
         setTimeout(
           proses,
@@ -459,12 +634,213 @@
 
 
     // =====================================
-    // TOMBOL KAMERA
+    // DAFTARKAN WAJAH SISWA
+    // =====================================
+
+    async function daftarkanWajah() {
+
+      if (!modelSiap) {
+
+        statusDaftar.textContent =
+          "Model belum siap.";
+
+        statusDaftar.style.color = "red";
+
+        return;
+      }
+
+      if (!stream || !video.srcObject) {
+
+        statusDaftar.textContent =
+          "Aktifkan kamera terlebih dahulu.";
+
+        statusDaftar.style.color = "red";
+
+        return;
+      }
+
+      const nama =
+        namaSiswa.value.trim();
+
+      if (!nama) {
+
+        statusDaftar.textContent =
+          "Masukkan nama siswa terlebih dahulu.";
+
+        statusDaftar.style.color = "red";
+
+        namaSiswa.focus();
+
+        return;
+      }
+
+
+      try {
+
+        statusDaftar.textContent =
+          "Mengambil data wajah...";
+
+        statusDaftar.style.color = "orange";
+
+
+        const hasil =
+          await faceapi
+            .detectAllFaces(
+              video,
+              new faceapi.TinyFaceDetectorOptions({
+                inputSize: 320,
+                scoreThreshold: 0.5
+              })
+            )
+            .withFaceLandmarks(true)
+            .withFaceDescriptors();
+
+
+        if (hasil.length === 0) {
+
+          statusDaftar.textContent =
+            "Wajah belum terdeteksi. Posisikan wajah di depan kamera.";
+
+          statusDaftar.style.color = "red";
+
+          return;
+        }
+
+
+        if (hasil.length > 1) {
+
+          statusDaftar.textContent =
+            "Terdeteksi lebih dari satu wajah. Pastikan hanya satu siswa.";
+
+          statusDaftar.style.color = "red";
+
+          return;
+        }
+
+
+        const descriptor =
+          Array.from(
+            hasil[0].descriptor
+          );
+
+
+        const data =
+          JSON.parse(
+            localStorage.getItem(STORAGE_KEY) || "[]"
+          );
+
+
+        const indexLama =
+          data.findIndex(function(siswa) {
+            return siswa.nama.toLowerCase() === nama.toLowerCase();
+          });
+
+
+        if (indexLama >= 0) {
+
+          data[indexLama].descriptor =
+            descriptor;
+
+        } else {
+
+          data.push({
+            nama: nama,
+            descriptor: descriptor
+          });
+        }
+
+
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(data)
+        );
+
+
+        muatDataWajah();
+
+
+        statusDaftar.textContent =
+          "✓ Wajah " +
+          nama +
+          " berhasil didaftarkan.";
+
+        statusDaftar.style.color =
+          "green";
+
+        namaSiswa.value = "";
+
+
+        console.log(
+          "WAJAH BERHASIL DIDAFTARKAN:",
+          nama
+        );
+
+      } catch (error) {
+
+        console.error(
+          "KESALAHAN PENDAFTARAN:",
+          error
+        );
+
+        statusDaftar.textContent =
+          "Gagal mendaftarkan wajah. Lihat Console.";
+
+        statusDaftar.style.color = "red";
+      }
+    }
+
+
+    // =====================================
+    // HAPUS SEMUA DATA WAJAH
+    // =====================================
+
+    function hapusSemuaData() {
+
+      const yakin =
+        confirm(
+          "Hapus semua data wajah siswa dari browser ini?"
+        );
+
+      if (!yakin) {
+        return;
+      }
+
+      localStorage.removeItem(
+        STORAGE_KEY
+      );
+
+      faceMatcher = null;
+
+      tampilkanDaftarSiswa([]);
+
+      hasilPengenalan.textContent =
+        "Pengenalan: belum ada siswa terdaftar.";
+
+      statusDaftar.textContent =
+        "Semua data wajah telah dihapus.";
+
+      statusDaftar.style.color =
+        "green";
+    }
+
+
+    // =====================================
+    // EVENT
     // =====================================
 
     btnKamera.addEventListener(
       "click",
       aktifkanKamera
+    );
+
+    btnDaftar.addEventListener(
+      "click",
+      daftarkanWajah
+    );
+
+    btnHapusData.addEventListener(
+      "click",
+      hapusSemuaData
     );
 
 
@@ -475,9 +851,7 @@
     window.addEventListener(
       "DOMContentLoaded",
       function() {
-
         muatModel();
-
       }
     );
 
