@@ -206,10 +206,20 @@
         Pengenalan: belum aktif.
       </div>
 
+      <div id="modeEksternal" style="display:none; margin-top:15px; padding:15px; border-radius:8px; background:#eff6ff; color:#1e3a8a;">
+        <b>Mode Pendaftaran Wajah</b>
+        <p id="statusEksternal" style="margin:8px 0 12px;">
+          Kamera ini dibuka dari sistem utama. Pastikan hanya satu wajah terlihat.
+        </p>
+        <button id="btnKirimDescriptor" disabled>
+          Kirim Wajah ke Sistem Utama
+        </button>
+      </div>
+
     </div>
 
 
-    <div class="card">
+    <div class="card" id="cardDaftar">
 
       <h2>Daftarkan Wajah Siswa</h2>
 
@@ -244,7 +254,7 @@
     </div>
 
 
-    <div class="card">
+    <div class="card" id="cardPresensi">
 
       <h2>Presensi Siswa</h2>
 
@@ -310,6 +320,21 @@
     let modelSiap = false;
     let faceMatcher = null;
     let siswaTerdeteksi = null;
+    let descriptorWajahTerkini = null;
+
+    const urlParams = new URLSearchParams(
+      window.location.search
+    );
+
+    const modeEksternal =
+      urlParams.has("idSiswa") &&
+      urlParams.has("token");
+
+    const idSiswaEksternal =
+      urlParams.get("idSiswa");
+
+    const tokenEksternal =
+      urlParams.get("token");
 
 
     const video =
@@ -338,6 +363,21 @@
 
     const hasilPengenalan =
       document.getElementById("hasilPengenalan");
+
+    const modeEksternalPanel =
+      document.getElementById("modeEksternal");
+
+    const statusEksternal =
+      document.getElementById("statusEksternal");
+
+    const btnKirimDescriptor =
+      document.getElementById("btnKirimDescriptor");
+
+    const cardDaftar =
+      document.getElementById("cardDaftar");
+
+    const cardPresensi =
+      document.getElementById("cardPresensi");
 
     const daftarSiswa =
       document.getElementById("daftarSiswa");
@@ -684,8 +724,13 @@
               "orange";
 
             siswaTerdeteksi = null;
+            descriptorWajahTerkini = null;
 
             btnPresensi.disabled = true;
+
+            if (modeEksternal) {
+              btnKirimDescriptor.disabled = true;
+            }
 
             hasilPengenalan.textContent =
               "Pengenalan: belum ada wajah.";
@@ -707,8 +752,15 @@
               "red";
 
             siswaTerdeteksi = null;
+            descriptorWajahTerkini = null;
 
             btnPresensi.disabled = true;
+
+            if (modeEksternal) {
+              btnKirimDescriptor.disabled = true;
+              statusEksternal.textContent =
+                "Terdeteksi lebih dari satu wajah. Sisakan satu orang saja.";
+            }
 
             hasilPengenalan.textContent =
               "Pengenalan: hanya satu wajah yang diperbolehkan.";
@@ -726,6 +778,17 @@
 
             status.style.color =
               "green";
+
+            descriptorWajahTerkini =
+              Array.from(
+                hasil[0].descriptor
+              );
+
+            if (modeEksternal) {
+              btnKirimDescriptor.disabled = false;
+              statusEksternal.textContent =
+                "✓ Satu wajah terdeteksi. Wajah siap dikirim ke sistem utama.";
+            }
 
 
             if (faceMatcher) {
@@ -832,6 +895,68 @@
       proses();
     }
 
+
+
+    // =====================================
+    // KIRIM FACE DESCRIPTOR KE SISTEM UTAMA
+    // =====================================
+
+    function kirimDescriptorKeInduk() {
+
+      if (!modeEksternal) {
+        return;
+      }
+
+      if (!idSiswaEksternal || !tokenEksternal) {
+        statusEksternal.textContent =
+          "Parameter siswa atau token kamera tidak ditemukan.";
+        return;
+      }
+
+      if (
+        !Array.isArray(descriptorWajahTerkini) ||
+        descriptorWajahTerkini.length !== 128
+      ) {
+        statusEksternal.textContent =
+          "Face Descriptor belum siap. Pastikan tepat satu wajah terlihat.";
+        return;
+      }
+
+      if (!window.opener || window.opener.closed) {
+        statusEksternal.textContent =
+          "Jendela sistem utama tidak ditemukan. Buka kamera dari menu Pendaftaran Wajah.";
+        return;
+      }
+
+      try {
+
+        window.opener.postMessage(
+          {
+            type: "FACE_DESCRIPTOR_READY",
+            token: tokenEksternal,
+            idSiswa: idSiswaEksternal,
+            descriptor: descriptorWajahTerkini
+          },
+          "*"
+        );
+
+        statusEksternal.textContent =
+          "✓ Face Descriptor berhasil dikirim ke sistem utama. Silakan kembali ke jendela utama.";
+
+        btnKirimDescriptor.disabled = true;
+
+      } catch (error) {
+
+        console.error(
+          "GAGAL MENGIRIM FACE DESCRIPTOR:",
+          error
+        );
+
+        statusEksternal.textContent =
+          "Gagal mengirim Face Descriptor ke sistem utama.";
+
+      }
+    }
 
 
     // =====================================
@@ -1417,6 +1542,30 @@
       "click",
       hapusRiwayatPresensi
     );
+
+    if (modeEksternal) {
+
+      modeEksternalPanel.style.display =
+        "block";
+
+      cardDaftar.style.display =
+        "none";
+
+      cardPresensi.style.display =
+        "none";
+
+      hasilPengenalan.textContent =
+        "Mode pendaftaran wajah eksternal: belum ada wajah.";
+
+      statusEksternal.textContent =
+        "Pilih Aktifkan Kamera. Setelah satu wajah terdeteksi, kirim Face Descriptor ke sistem utama.";
+
+      btnKirimDescriptor.addEventListener(
+        "click",
+        kirimDescriptorKeInduk
+      );
+
+    }
 
     tampilkanRiwayatPresensi();
     tampilkanStatusHariIni();
