@@ -126,6 +126,38 @@
       font-size: 15px;
     }
 
+    .info-jadwal {
+      margin: 12px 0;
+      padding: 12px 15px;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-size: 15px;
+    }
+
+    .status-hari-ini {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    .status-hari-ini th,
+    .status-hari-ini td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .status-badge {
+      font-weight: bold;
+    }
+
+    .status-hadir { color: green; }
+    .status-terlambat { color: #d97706; }
+    .status-tidak-sesuai { color: red; }
+    .status-belum-hadir { color: #64748b; }
+
     .tabel-presensi th,
     .tabel-presensi td {
       border: 1px solid #cbd5e1;
@@ -221,6 +253,11 @@
         <b>Presensi Sekarang</b>.
       </p>
 
+      <div class="info-jadwal">
+        <b>Jadwal Presensi:</b> Jam masuk 07:15 WITA |
+        Batas terlambat 07:30 WITA
+      </div>
+
       <button id="btnPresensi" disabled>
         Presensi Sekarang
       </button>
@@ -235,6 +272,12 @@
         <p class="kosong-presensi">
           Belum ada data presensi.
         </p>
+      </div>
+
+      <h3>Status Hari Ini</h3>
+
+      <div id="statusHariIniContainer">
+        <p class="kosong-presensi">Memuat status siswa...</p>
       </div>
 
       <button id="btnHapusPresensi">
@@ -256,6 +299,11 @@
 
     const STORAGE_KEY = "dataWajahSiswa";
     const PRESENSI_KEY = "dataPresensiSiswa";
+
+    // Pengaturan jadwal presensi
+    const TIME_ZONE = "Asia/Makassar";
+    const JAM_MASUK = "07:15";
+    const BATAS_TERLAMBAT = "07:30";
 
     let stream = null;
     let deteksiAktif = false;
@@ -302,6 +350,9 @@
 
     const tabelPresensiContainer =
       document.getElementById("tabelPresensiContainer");
+
+    const statusHariIniContainer =
+      document.getElementById("statusHariIniContainer");
 
     const btnHapusPresensi =
       document.getElementById("btnHapusPresensi");
@@ -379,6 +430,7 @@
 
           faceMatcher = null;
           tampilkanDaftarSiswa(data);
+          tampilkanStatusHariIni();
           return;
         }
 
@@ -401,6 +453,7 @@
           );
 
         tampilkanDaftarSiswa(data);
+        tampilkanStatusHariIni();
 
         console.log(
           "DATA WAJAH DIMUAT:",
@@ -808,24 +861,41 @@
     }
 
 
+    function ambilWaktuSekarang() {
+
+      const bagian =
+        new Intl.DateTimeFormat("en-CA", {
+          timeZone: TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hourCycle: "h23"
+        }).formatToParts(new Date());
+
+      const hasil = {};
+
+      bagian.forEach(function(item) {
+        if (item.type !== "literal") {
+          hasil[item.type] = item.value;
+        }
+      });
+
+      return hasil;
+    }
+
+
     function tanggalHariIni() {
 
-      const sekarang = new Date();
+      const waktu = ambilWaktuSekarang();
 
-      const tahun =
-        sekarang.getFullYear();
-
-      const bulan =
-        String(
-          sekarang.getMonth() + 1
-        ).padStart(2, "0");
-
-      const tanggal =
-        String(
-          sekarang.getDate()
-        ).padStart(2, "0");
-
-      return tahun + "-" + bulan + "-" + tanggal;
+      return (
+        waktu.year + "-" +
+        waktu.month + "-" +
+        waktu.day
+      );
     }
 
 
@@ -850,21 +920,29 @@
 
     function formatJam() {
 
-      const sekarang = new Date();
+      const waktu = ambilWaktuSekarang();
 
       return (
-        String(
-          sekarang.getHours()
-        ).padStart(2, "0") +
-        ":" +
-        String(
-          sekarang.getMinutes()
-        ).padStart(2, "0") +
-        ":" +
-        String(
-          sekarang.getSeconds()
-        ).padStart(2, "0")
+        waktu.hour + ":" +
+        waktu.minute + ":" +
+        waktu.second
       );
+    }
+
+
+    function tentukanStatusPresensi(jam) {
+
+      const jamMenit = jam.slice(0, 5);
+
+      if (jamMenit <= JAM_MASUK) {
+        return "Hadir";
+      }
+
+      if (jamMenit <= BATAS_TERLAMBAT) {
+        return "Terlambat";
+      }
+
+      return "Tidak sesuai jadwal";
     }
 
 
@@ -916,6 +994,80 @@
 
       tabelPresensiContainer.innerHTML =
         htmlTabel;
+    }
+
+
+    function tampilkanStatusHariIni() {
+
+      let siswaData = [];
+
+      try {
+        siswaData = JSON.parse(
+          localStorage.getItem(STORAGE_KEY) || "[]"
+        );
+      } catch (error) {
+        siswaData = [];
+      }
+
+      if (!Array.isArray(siswaData) || siswaData.length === 0) {
+        statusHariIniContainer.innerHTML =
+          '<p class="kosong-presensi">Belum ada siswa terdaftar.</p>';
+        return;
+      }
+
+      const dataPresensi = ambilDataPresensi();
+      const hariIni = tanggalHariIni();
+
+      let html = `
+        <table class="status-hari-ini">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama</th>
+              <th>Status Hari Ini</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      siswaData.forEach(function(siswa, index) {
+
+        const presensi = dataPresensi.find(function(item) {
+          return (
+            item.nama.toLowerCase() === siswa.nama.toLowerCase() &&
+            item.tanggal === hariIni
+          );
+        });
+
+        const statusSiswa = presensi
+          ? presensi.status
+          : "Belum Hadir";
+
+        let kelas = "status-belum-hadir";
+
+        if (statusSiswa === "Hadir") {
+          kelas = "status-hadir";
+        } else if (statusSiswa === "Terlambat") {
+          kelas = "status-terlambat";
+        } else if (statusSiswa === "Tidak sesuai jadwal") {
+          kelas = "status-tidak-sesuai";
+        }
+
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${siswa.nama}</td>
+            <td class="status-badge ${kelas}">${statusSiswa}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      statusHariIniContainer.innerHTML = html;
     }
 
 
@@ -984,7 +1136,9 @@
           formatJam(),
 
         status:
-          "Hadir"
+          tentukanStatusPresensi(
+            formatJam()
+          )
 
       });
 
@@ -995,15 +1149,21 @@
 
       btnPresensi.disabled = true;
 
+      const statusBaru =
+        data[0].status;
+
       statusPresensi.textContent =
         "✓ Presensi " +
         nama +
-        " berhasil dicatat. Presensi hari ini sudah tersimpan.";
+        " berhasil dicatat dengan status: " +
+        statusBaru +
+        ".";
 
       statusPresensi.style.color =
         "green";
 
       tampilkanRiwayatPresensi();
+      tampilkanStatusHariIni();
 
       console.log(
         "PRESENSI BERHASIL:",
@@ -1028,6 +1188,7 @@
       );
 
       tampilkanRiwayatPresensi();
+      tampilkanStatusHariIni();
 
       statusPresensi.textContent =
         "Semua riwayat presensi telah dihapus.";
@@ -1258,6 +1419,7 @@
     );
 
     tampilkanRiwayatPresensi();
+    tampilkanStatusHariIni();
 
 
     // =====================================
