@@ -1206,32 +1206,53 @@
     // EVENT
     // =====================================
 
-    btnKamera.addEventListener(
-      "click",
-      aktifkanKamera
-    );
+    console.log("btnKamera:", btnKamera);
+console.log("btnDaftar:", btnDaftar);
+console.log("btnHapusData:", btnHapusData);
+console.log("btnPresensi:", btnPresensi);
+console.log("btnHapusPresensi:", btnHapusPresensi);
 
-    btnDaftar.addEventListener(
-      "click",
-      daftarkanWajah
-    );
 
-    btnHapusData.addEventListener(
-      "click",
-      hapusSemuaData
-    );
+// =====================================
+// EVENT TOMBOL
+// =====================================
 
-    btnPresensi.addEventListener(
-      "click",
-      lakukanPresensi
-    );
+if (btnKamera) {
+  btnKamera.addEventListener(
+    "click",
+    aktifkanKamera
+  );
+}
 
-    btnHapusPresensi.addEventListener(
-      "click",
-      hapusRiwayatPresensi
-    );
+if (btnDaftar) {
+  btnDaftar.addEventListener(
+    "click",
+    daftarkanWajah
+  );
+}
 
-    tampilkanRiwayatPresensi();
+if (btnHapusData) {
+  btnHapusData.addEventListener(
+    "click",
+    hapusSemuaData
+  );
+}
+
+if (btnPresensi) {
+  btnPresensi.addEventListener(
+    "click",
+    lakukanPresensi
+  );
+}
+
+if (btnHapusPresensi) {
+  btnHapusPresensi.addEventListener(
+    "click",
+    hapusRiwayatPresensi
+  );
+}
+
+tampilkanRiwayatPresensi();
 
 
     // =====================================
