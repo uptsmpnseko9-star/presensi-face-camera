@@ -697,15 +697,31 @@
                   " | Jarak: " +
                   hasilMatch.distance.toFixed(3);
 
-                btnPresensi.disabled = false;
+                // Cegah presensi kedua pada tanggal yang sama.
+                if (sudahPresensiHariIni(hasilMatch.label)) {
 
-                statusPresensi.textContent =
-                  "Siswa dikenali: " +
-                  hasilMatch.label +
-                  ". Siap melakukan presensi.";
+                  btnPresensi.disabled = true;
 
-                statusPresensi.style.color =
-                  "green";
+                  statusPresensi.textContent =
+                    "⚠ " +
+                    hasilMatch.label +
+                    " sudah melakukan presensi hari ini.";
+
+                  statusPresensi.style.color =
+                    "orange";
+
+                } else {
+
+                  btnPresensi.disabled = false;
+
+                  statusPresensi.textContent =
+                    "Siswa dikenali: " +
+                    hasilMatch.label +
+                    ". Siap melakukan presensi.";
+
+                  statusPresensi.style.color =
+                    "green";
+                }
 
               } else {
 
@@ -941,6 +957,8 @@
 
       if (sudahPresensiHariIni(nama)) {
 
+        btnPresensi.disabled = true;
+
         statusPresensi.textContent =
           "⚠ " +
           nama +
@@ -975,10 +993,12 @@
         JSON.stringify(data)
       );
 
+      btnPresensi.disabled = true;
+
       statusPresensi.textContent =
         "✓ Presensi " +
         nama +
-        " berhasil dicatat.";
+        " berhasil dicatat. Presensi hari ini sudah tersimpan.";
 
       statusPresensi.style.color =
         "green";
