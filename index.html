@@ -215,23 +215,27 @@
   <h2>Presensi Siswa</h2>
 
   <p>
-    Pastikan wajah siswa sudah dikenali,
-    lalu klik <b>Presensi Sekarang</b>.
+    Pastikan wajah siswa sudah dikenali, lalu klik
+    <b>Presensi Sekarang</b>.
   </p>
 
   <button id="btnPresensi">
     Presensi Sekarang
   </button>
 
-  <p id="statusPresensi"></p>
+  <p id="statusPresensi">
+    Belum ada siswa yang dikenali.
+  </p>
 
   <h3>Riwayat Presensi</h3>
 
-  <div id="riwayatPresensi">
-    <p>Belum ada data presensi.</p>
+  <div id="tabelPresensiContainer">
+    <p class="kosong-presensi">
+      Belum ada data presensi.
+    </p>
   </div>
 
-  <button id="btnHapusRiwayat">
+  <button id="btnHapusPresensi">
     Hapus Riwayat Presensi
   </button>
 
