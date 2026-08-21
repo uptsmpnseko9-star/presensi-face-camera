@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Presensi Siswa</title>
+  <link rel="icon" href="data:,">
 
   <style>
     body {
@@ -210,36 +211,37 @@
 
     </div>
 
-        <div class="card">
 
-  <h2>Presensi Siswa</h2>
+    <div class="card">
 
-  <p>
-    Pastikan wajah siswa sudah dikenali, lalu klik
-    <b>Presensi Sekarang</b>.
-  </p>
+      <h2>Presensi Siswa</h2>
 
-  <button id="btnPresensi">
-    Presensi Sekarang
-  </button>
+      <p>
+        Pastikan wajah siswa sudah dikenali, lalu klik
+        <b>Presensi Sekarang</b>.
+      </p>
 
-  <p id="statusPresensi">
-    Belum ada siswa yang dikenali.
-  </p>
+      <button id="btnPresensi" disabled>
+        Presensi Sekarang
+      </button>
 
-  <h3>Riwayat Presensi</h3>
+      <p id="statusPresensi">
+        Belum ada siswa yang dikenali.
+      </p>
 
-  <div id="tabelPresensiContainer">
-    <p class="kosong-presensi">
-      Belum ada data presensi.
-    </p>
-  </div>
+      <h3>Riwayat Presensi</h3>
 
-  <button id="btnHapusPresensi">
-    Hapus Riwayat Presensi
-  </button>
+      <div id="tabelPresensiContainer">
+        <p class="kosong-presensi">
+          Belum ada data presensi.
+        </p>
+      </div>
 
-</div>
+      <button id="btnHapusPresensi">
+        Hapus Riwayat Presensi
+      </button>
+
+    </div>
 
   </main>
 
@@ -1210,53 +1212,32 @@
     // EVENT
     // =====================================
 
-    console.log("btnKamera:", btnKamera);
-console.log("btnDaftar:", btnDaftar);
-console.log("btnHapusData:", btnHapusData);
-console.log("btnPresensi:", btnPresensi);
-console.log("btnHapusPresensi:", btnHapusPresensi);
+    btnKamera.addEventListener(
+      "click",
+      aktifkanKamera
+    );
 
+    btnDaftar.addEventListener(
+      "click",
+      daftarkanWajah
+    );
 
-// =====================================
-// EVENT TOMBOL
-// =====================================
+    btnHapusData.addEventListener(
+      "click",
+      hapusSemuaData
+    );
 
-if (btnKamera) {
-  btnKamera.addEventListener(
-    "click",
-    aktifkanKamera
-  );
-}
+    btnPresensi.addEventListener(
+      "click",
+      lakukanPresensi
+    );
 
-if (btnDaftar) {
-  btnDaftar.addEventListener(
-    "click",
-    daftarkanWajah
-  );
-}
+    btnHapusPresensi.addEventListener(
+      "click",
+      hapusRiwayatPresensi
+    );
 
-if (btnHapusData) {
-  btnHapusData.addEventListener(
-    "click",
-    hapusSemuaData
-  );
-}
-
-if (btnPresensi) {
-  btnPresensi.addEventListener(
-    "click",
-    lakukanPresensi
-  );
-}
-
-if (btnHapusPresensi) {
-  btnHapusPresensi.addEventListener(
-    "click",
-    hapusRiwayatPresensi
-  );
-}
-
-tampilkanRiwayatPresensi();
+    tampilkanRiwayatPresensi();
 
 
     // =====================================
